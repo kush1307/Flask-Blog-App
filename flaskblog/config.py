@@ -9,4 +9,6 @@ class Config:
     MAIL_USE_SSL = True
     MAIL_USERNAME = os.environ.get('EMAIL_USER')
     MAIL_PASSWORD = os.environ.get('EMAIL_PASS')
+    GOOGLE_CLIENT_ID = "505904973836-o3g1u9ggvhlu14l0mgsevve9cd61lfmk.apps.googleusercontent.com"
+    GOOGLE_CLIENT_SECRET = "0ca7CGGQn2HGw9Yge6FPw83p"
 

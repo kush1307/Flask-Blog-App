@@ -1,12 +1,48 @@
-from flask import render_template, url_for, flash, redirect, request, Blueprint
+from flask import render_template, url_for, flash, redirect, request, Blueprint, current_app
 from flask_login import login_user, current_user, logout_user, login_required
-from flaskblog import db, bcrypt
+from flaskblog import db, bcrypt, oauth
 from flaskblog.models import User, Post
 from flaskblog.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
                                    RequestResetForm, ResetPasswordForm)
 from flaskblog.users.utils import save_picture, send_reset_email
 
 users = Blueprint('users', __name__)
+
+
+# For Google Login----------------------------------------
+
+
+@users.route('/login/google', methods=['GET', 'POST'])
+def google_login():
+    google = oauth.create_client('google')
+    redirect_uri = url_for('users.google_authorize', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
+@users.route('/login/google/authorize', methods=['GET', 'POST'])
+def google_authorize():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.home'))
+    google = oauth.create_client('google')
+    token = google.authorize_access_token()
+    resp = google.get('userinfo').json()
+    username_data = resp['email'].split('@')[0]
+    email_data = resp['email']
+    # password_data = username_data + "@1234"
+    old_user = (User.query.filter_by(email=email_data).first())
+    if not old_user:
+        user = User(username=username_data, email=email_data, password="password")
+        db.session.add(user)
+        db.session.commit()
+        login_user(user)
+    else:
+        login_user(old_user)
+    next_page = request.args.get('next')
+    flash('Successfully Logged in!!', 'success')
+    return redirect(next_page) if next_page else redirect(url_for('main.home'))
+
+
+# Google Login Ends----------------------------------------
 
 
 @users.route('/register', methods=['GET', 'POST'])
